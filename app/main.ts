@@ -1,12 +1,10 @@
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
-import { RequestParser } from './request';
+import { RequestParser, type Request } from './request';
 
 const PORT = 4221;
 const HOST = 'localhost';
-
-const directory = process.argv[3];
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log('Logs from your program will appear here!');
@@ -15,7 +13,8 @@ console.log('Logs from your program will appear here!');
 const server = net.createServer((socket) => {
   socket.on('data', (data) => {
     const request = data.toString();
-    const response = handleIncomingRequest(request);
+    const parsedRequest = RequestParser.parse(request);
+    const response = handleIncomingRequest(parsedRequest);
     socket.write(response);
   });
 
@@ -24,10 +23,9 @@ const server = net.createServer((socket) => {
   });
 });
 
-const handleIncomingRequest = (request: string): string => {
-  const parsedRequest = RequestParser.parse(request);
-
+const handleIncomingRequest = (parsedRequest: Request): string => {
   const { method, path: url, headers, body } = parsedRequest;
+  const directory = process.argv[3];
 
   switch (method) {
     case 'GET':

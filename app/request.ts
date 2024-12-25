@@ -3,7 +3,7 @@ interface Headers {
   'content-type'?: string;
 }
 
-interface Request {
+export interface Request {
   method: string;
   path: string;
   headers: Headers;

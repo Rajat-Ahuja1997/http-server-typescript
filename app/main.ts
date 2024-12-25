@@ -29,29 +29,38 @@ const handleIncomingRequest = (request: string): string => {
   const hostLine = request.split('\r\n')[1]; // Unused
   const userAgentLine = request.split('\r\n')[2];
 
-  if (method === 'GET') {
-    if (url === '/') {
-      return _formatHttpResponse(200);
-    } else if (url.startsWith('/echo')) {
-      const echo = url.split('/')[2];
-      return _formatHttpResponse(200, echo);
-    } else if (url.startsWith('/user-agent')) {
-      const userAgent = userAgentLine.split(': ')[1];
-      return _formatHttpResponse(200, userAgent);
-    } else if (url.startsWith('/files')) {
-      const file = url.split('/')[2];
-      try {
-        const filePath = path.join(directory, file);
-        const contents = fs.readFileSync(filePath, 'utf-8');
-        return _formatHttpResponse(200, contents, 'application/octet-stream');
-      } catch (err) {
+  const body = request.split('\r\n')[5];
+
+  switch (method) {
+    case 'GET':
+      if (url === '/') {
+        return _formatHttpResponse(200);
+      } else if (url.startsWith('/echo')) {
+        const echo = url.split('/')[2];
+        return _formatHttpResponse(200, echo);
+      } else if (url.startsWith('/user-agent')) {
+        const userAgent = userAgentLine.split(': ')[1];
+        return _formatHttpResponse(200, userAgent);
+      } else if (url.startsWith('/files')) {
+        const file = url.split('/')[2];
+        try {
+          const filePath = path.join(directory, file);
+          const contents = fs.readFileSync(filePath, 'utf-8');
+          return _formatHttpResponse(200, contents, 'application/octet-stream');
+        } catch (err) {
+          return _formatHttpResponse(404);
+        }
+      } else {
         return _formatHttpResponse(404);
       }
-    } else {
-      return _formatHttpResponse(404);
-    }
-  } else {
-    return _formatHttpResponse(500);
+    case 'POST':
+      if (url.startsWith('/files')) {
+        const fileToWrite = url.split('/')[2];
+        fs.writeFileSync(path.join(directory, fileToWrite), body);
+      }
+      return _formatHttpResponse(201);
+    default:
+      return _formatHttpResponse(500);
   }
 };
 
@@ -65,6 +74,8 @@ const _formatHttpResponse = (status: number, body?: string, type?: string) => {
       } else {
         return `${baseResponse} 200 OK\r\nContent-Type: ${contentType}\r\nContent-Length: ${body.length}\r\n\r\n${body}`;
       }
+    case 201:
+      return `${baseResponse} 201 Created\r\n\r\n`;
     case 404:
       return `${baseResponse} 404 Not Found\r\n\r\n`;
     default:

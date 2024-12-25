@@ -1,6 +1,7 @@
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
+import { RequestParser } from './request';
 
 const PORT = 4221;
 const HOST = 'localhost';
@@ -24,12 +25,9 @@ const server = net.createServer((socket) => {
 });
 
 const handleIncomingRequest = (request: string): string => {
-  const requestLine = request.split('\r\n')[0];
-  const [method, url, httpVersion] = requestLine.split(' ');
-  const hostLine = request.split('\r\n')[1]; // Unused
-  const userAgentLine = request.split('\r\n')[2];
+  const parsedRequest = RequestParser.parse(request);
 
-  const body = request.split('\r\n')[5];
+  const { method, path: url, headers, body } = parsedRequest;
 
   switch (method) {
     case 'GET':
@@ -39,8 +37,7 @@ const handleIncomingRequest = (request: string): string => {
         const echo = url.split('/')[2];
         return _formatHttpResponse(200, echo);
       } else if (url.startsWith('/user-agent')) {
-        const userAgent = userAgentLine.split(': ')[1];
-        return _formatHttpResponse(200, userAgent);
+        return _formatHttpResponse(200, headers['user-agent']);
       } else if (url.startsWith('/files')) {
         const file = url.split('/')[2];
         try {

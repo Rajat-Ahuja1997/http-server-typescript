@@ -25,12 +25,18 @@ const server = net.createServer((socket) => {
 const handleIncomingRequest = (request: string) => {
   const requestLine = request.split('\r\n')[0];
   const [method, url, httpVersion] = requestLine.split(' ');
+  const hostLine = request.split('\r\n')[1]; // Unused
+  const userAgentLine = request.split('\r\n')[2];
+
   if (method === 'GET') {
     if (url === '/') {
       return _formatHttpResponse(200);
     } else if (url.startsWith('/echo')) {
       const echo = url.split('/')[2];
       return _formatHttpResponse(200, echo);
+    } else if (url.startsWith('/user-agent')) {
+      const userAgent = userAgentLine.split(': ')[1];
+      return _formatHttpResponse(200, userAgent);
     } else {
       return _formatHttpResponse(404);
     }

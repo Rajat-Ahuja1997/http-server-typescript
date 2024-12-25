@@ -20,9 +20,9 @@ const _formatHttpResponse = (status: number) => {
   let baseResponse = `HTTP/1.1 `;
   switch (status) {
     case 200:
-      return `${baseResponse}200 OK`;
+      return `${baseResponse}200 OK\r\n\r\n`;
     default:
-      return `${baseResponse}500 Unhandled Request`;
+      return `${baseResponse}500 Unhandled Request\r\n\r\n`;
   }
 };
 

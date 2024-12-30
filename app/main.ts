@@ -24,7 +24,7 @@ const handleIncomingRequest = (parsedRequest: Request): string => {
   const { method, path: url, headers, body } = parsedRequest;
   const directory = process.argv[3];
   if (headers['accept-encoding']) {
-    if (headers['accept-encoding'] === 'gzip') {
+    if (headers['accept-encoding'].includes('gzip')) {
       return new HttpResponseBuilder(200)
         .setType('text/plain')
         .setEncoding('gzip')

@@ -41,8 +41,6 @@ class HttpResponseBuilder {
     // Set Content-Length header
     if (respBody) {
       this.headers['Content-Length'] = respBody.length.toString();
-    } else {
-      this.headers['Content-Length'] = '0';
     }
 
     // Add headers to response

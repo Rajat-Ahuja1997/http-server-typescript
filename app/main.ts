@@ -20,31 +20,25 @@ const server = net.createServer((socket) => {
   });
 });
 
-const handleIncomingRequest = (parsedRequest: Request): string => {
+const handleIncomingRequest = (parsedRequest: Request): Buffer => {
   const { method, path: url, headers, body } = parsedRequest;
   const directory = process.argv[3];
+
+  const builder = new HttpResponseBuilder(200);
   if (headers['accept-encoding']) {
-    if (headers['accept-encoding'].includes('gzip')) {
-      return new HttpResponseBuilder(200)
-        .setType('text/plain')
-        .setEncoding('gzip')
-        .setBody(body)
-        .build();
-    }
+    const encodings = headers['accept-encoding'].split(', ');
+    builder.setEncoding(encodings);
   }
 
   switch (method) {
     case 'GET':
       if (url === '/') {
-        return new HttpResponseBuilder(200).build();
+        return builder.build();
       } else if (url.startsWith('/echo')) {
         const echo = url.split('/')[2];
-        return new HttpResponseBuilder(200)
-          .setBody(echo)
-          .setType('text/plain')
-          .build();
+        return builder.setBody(echo).setType('text/plain').build();
       } else if (url.startsWith('/user-agent')) {
-        return new HttpResponseBuilder(200)
+        return builder
           .setBody(headers['user-agent'] || '')
           .setType('text/plain')
           .build();
@@ -53,7 +47,7 @@ const handleIncomingRequest = (parsedRequest: Request): string => {
         try {
           const filePath = path.join(directory, file);
           const contents = fs.readFileSync(filePath, 'utf-8');
-          return new HttpResponseBuilder(200)
+          return builder
             .setBody(contents)
             .setType('application/octet-stream')
             .build();

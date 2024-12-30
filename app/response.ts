@@ -1,3 +1,5 @@
+import { gzipSync } from 'zlib';
+
 class HttpResponseBuilder {
   private baseResponse: string = 'HTTP/1.1';
   private status: number;
@@ -10,7 +12,6 @@ class HttpResponseBuilder {
 
   setBody(body: string) {
     this.body = body;
-    this.headers['Content-Length'] = body.length.toString();
     return this;
   }
 
@@ -19,32 +20,46 @@ class HttpResponseBuilder {
     return this;
   }
 
-  setEncoding(encoding: string) {
-    this.headers['Content-Encoding'] = encoding;
+  setEncoding(encodings: string[]) {
+    if (encodings.includes('gzip')) {
+      this.headers['Content-Encoding'] = 'gzip';
+    }
     return this;
   }
 
-  build(): string {
+  build(): Buffer {
     const statusText = this.getStatusText(this.status);
     let response = `${this.baseResponse} ${this.status} ${statusText}\r\n`;
+    let respBody: Buffer | undefined;
 
-    if (Object.keys(this.headers).length > 0) {
-      response += Object.entries(this.headers)
-        .map(([key, value]) => `${key}: ${value}\r\n`)
-        .join('');
+    if (this.body && this.headers['Content-Encoding'] === 'gzip') {
+      respBody = gzipSync(Buffer.from(this.body)); // Compress the body using gzip
+    } else if (this.body) {
+      respBody = Buffer.from(this.body); // Use plain text body
     }
 
+    // Set Content-Length header
+    if (respBody) {
+      this.headers['Content-Length'] = respBody.length.toString();
+    } else {
+      this.headers['Content-Length'] = '0';
+    }
+
+    // Add headers to response
+    response += Object.entries(this.headers)
+      .map(([key, value]) => `${key}: ${value}\r\n`)
+      .join('');
+
+    // End headers section
     response += '\r\n';
 
-    if (this.body) {
-      response += this.body;
-    }
-
-    console.log('response', response);
-    return response;
+    // Combine headers and body
+    return respBody
+      ? Buffer.concat([Buffer.from(response, 'utf-8'), respBody])
+      : Buffer.from(response, 'utf-8');
   }
 
-  private getStatusText(status: number) {
+  private getStatusText(status: number): string {
     switch (status) {
       case 200:
         return 'OK';
